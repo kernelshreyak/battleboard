@@ -1,0 +1,4 @@
+Some sample positions to try:
+
+Castle protection 1:
+bb1;size=20;turn=red;rows=20/20/20/20/20/20/20/20/20/2xxxxx5A7/2xsssx4C8/2x2sx5A7/2x2cx5A7/2xl1sx5AL6/2xsssx5A7/2xxxxx4C8/11A8/20/20/20
