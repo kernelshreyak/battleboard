@@ -912,6 +912,7 @@ export async function createBattleboardApp(
   });
 
   renderer.drawBoard();
+  renderer.resize();
   renderer.fitCameraToBoard();
   renderPalette();
   updateScoreUi();
@@ -926,6 +927,7 @@ export async function createBattleboardApp(
   );
 
   window.addEventListener("resize", () => {
+    renderer.resize();
     renderer.fitCameraToBoard();
   });
 }
