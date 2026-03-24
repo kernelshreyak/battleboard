@@ -37,7 +37,7 @@ export class BoardRenderer {
   private readonly pieceViews = new Map<string, Container>();
   private readonly callbacks: RendererCallbacks;
   private readonly boardHost: HTMLDivElement;
-  private readonly wallTextures: { intact: Texture; cracked: Texture };
+  private readonly wallTextures: { intact: Texture; cracked: Texture } | null;
   private boardSize: number;
   private dragging = false;
   private dragStart:
@@ -49,7 +49,7 @@ export class BoardRenderer {
     boardHost: HTMLDivElement,
     boardSize: number,
     callbacks: RendererCallbacks,
-    wallTextures: { intact: Texture; cracked: Texture },
+    wallTextures: { intact: Texture; cracked: Texture } | null,
   ) {
     this.boardHost = boardHost;
     this.boardSize = boardSize;
@@ -62,12 +62,22 @@ export class BoardRenderer {
     boardSize: number,
     callbacks: RendererCallbacks,
   ): Promise<BoardRenderer> {
-    const wallTextures = {
-      intact: await Assets.load<Texture>("/assets/wall-intact.svg"),
-      cracked: await Assets.load<Texture>("/assets/wall-cracked.svg"),
-    };
+    let wallTextures: { intact: Texture; cracked: Texture } | null = null;
+    try {
+      wallTextures = {
+        intact: await Assets.load<Texture>("/assets/wall-intact.svg"),
+        cracked: await Assets.load<Texture>("/assets/wall-cracked.svg"),
+      };
+    } catch (error) {
+      console.warn("Wall textures failed to load, using vector fallback.", error);
+    }
 
-    const renderer = new BoardRenderer(boardHost, boardSize, callbacks, wallTextures);
+    const renderer = new BoardRenderer(
+      boardHost,
+      boardSize,
+      callbacks,
+      wallTextures,
+    );
     await renderer.app.init({
       antialias: true,
       background: 0xf4efe3,
@@ -351,13 +361,41 @@ export class BoardRenderer {
     const badge = new Graphics();
 
     if (piece.kind === "wall") {
-      const sprite = new Sprite(
-        placement.wallHits === 1 ? this.wallTextures.cracked : this.wallTextures.intact,
-      );
-      sprite.anchor.set(0.5);
-      sprite.width = CELL_SIZE * 0.8;
-      sprite.height = CELL_SIZE * 0.8;
-      container.addChild(sprite);
+      if (this.wallTextures) {
+        const sprite = new Sprite(
+          placement.wallHits === 1
+            ? this.wallTextures.cracked
+            : this.wallTextures.intact,
+        );
+        sprite.anchor.set(0.5);
+        sprite.width = CELL_SIZE * 0.8;
+        sprite.height = CELL_SIZE * 0.8;
+        container.addChild(sprite);
+      } else {
+        body
+          .roundRect(-CELL_SIZE * 0.3, -CELL_SIZE * 0.28, CELL_SIZE * 0.6, CELL_SIZE * 0.56, 6)
+          .fill({ color: 0x6d655d })
+          .stroke({ color: 0x463d35, width: 2 });
+        badge
+          .moveTo(-CELL_SIZE * 0.24, -CELL_SIZE * 0.08)
+          .lineTo(CELL_SIZE * 0.24, -CELL_SIZE * 0.08)
+          .moveTo(-CELL_SIZE * 0.24, CELL_SIZE * 0.06)
+          .lineTo(CELL_SIZE * 0.24, CELL_SIZE * 0.06)
+          .moveTo(-CELL_SIZE * 0.1, -CELL_SIZE * 0.28)
+          .lineTo(-CELL_SIZE * 0.1, CELL_SIZE * 0.28)
+          .moveTo(CELL_SIZE * 0.1, -CELL_SIZE * 0.28)
+          .lineTo(CELL_SIZE * 0.1, CELL_SIZE * 0.28)
+          .stroke({ color: 0xd9d2c7, width: 2 });
+        if (placement.wallHits === 1) {
+          badge
+            .moveTo(-CELL_SIZE * 0.18, -CELL_SIZE * 0.18)
+            .lineTo(-CELL_SIZE * 0.02, -CELL_SIZE * 0.02)
+            .lineTo(-CELL_SIZE * 0.12, CELL_SIZE * 0.18)
+            .lineTo(CELL_SIZE * 0.08, CELL_SIZE * 0.26)
+            .stroke({ color: 0x1b1612, width: 3 });
+        }
+        container.addChild(body, badge);
+      }
       return container;
     }
 

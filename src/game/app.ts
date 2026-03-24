@@ -1,8 +1,41 @@
-import { BLUE_PALETTE, DEFAULT_BOARD_SIZE, PIECE_LABELS, PIECE_SCORES, RED_PALETTE, WALL_PALETTE } from "./constants";
-import { assertActiveTeam, canPieceAttack, canPieceUseOwnRoll, canUsePieceForCurrentRoll, getBlockingPiece, getCaptureMessage, getDiceCountForPiece, getManhattanDistance, getStraightLineSquares, getWallMessage, isFlexibleAttack, isStraightLine, requiresMoveOnCapture, rollDice } from "./rules";
+import {
+  BLUE_PALETTE,
+  DEFAULT_BOARD_SIZE,
+  PIECE_LABELS,
+  PIECE_SCORES,
+  RED_PALETTE,
+  WALL_PALETTE,
+} from "./constants";
+import {
+  assertActiveTeam,
+  canPieceAttack,
+  canPieceUseOwnRoll,
+  canUsePieceForCurrentRoll,
+  getBlockingPiece,
+  getCaptureMessage,
+  getDiceCountForPiece,
+  getManhattanDistance,
+  getStraightLineSquares,
+  getWallMessage,
+  isFlexibleAttack,
+  isStraightLine,
+  requiresMoveOnCapture,
+  rollDice,
+} from "./rules";
 import { clampBoardSize, parseState, serializeState } from "./serialization";
 import { getAppTemplate } from "./template";
-import type { ActiveTeam, Mode, PaletteOption, Piece, PieceKind, PiecePlacement, Position, Scores, Team, TurnState } from "./types";
+import type {
+  ActiveTeam,
+  Mode,
+  PaletteOption,
+  Piece,
+  PieceKind,
+  PiecePlacement,
+  Position,
+  Scores,
+  Team,
+  TurnState,
+} from "./types";
 import { BoardRenderer } from "./renderer";
 
 interface AppElements {
@@ -37,7 +70,9 @@ interface AppElements {
   closeRulesButton: HTMLButtonElement;
 }
 
-export async function createBattleboardApp(root: HTMLDivElement): Promise<void> {
+export async function createBattleboardApp(
+  root: HTMLDivElement,
+): Promise<void> {
   root.innerHTML = getAppTemplate();
   const elements = getElements();
 
@@ -99,7 +134,9 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
       remainingPointsValue: must("#remaining-points-value"),
       redScoreValue: must("#red-score"),
       blueScoreValue: must("#blue-score"),
-      modeButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-mode]")),
+      modeButtons: Array.from(
+        document.querySelectorAll<HTMLButtonElement>("[data-mode]"),
+      ),
       clearSelectionButton: must("#clear-selection"),
       clearBoardButton: must("#clear-board"),
       startGameButton: must("#start-game"),
@@ -132,6 +169,15 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     return undefined;
   }
 
+  function hasRemainingUnits(team: ActiveTeam): boolean {
+    for (const placement of pieces.values()) {
+      if (placement.piece.team === team && placement.piece.kind !== "wall") {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function updateScoreUi(): void {
     elements.redScoreValue.textContent = String(scores.red);
     elements.blueScoreValue.textContent = String(scores.blue);
@@ -144,8 +190,14 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
   }
 
   function updateTurnUi(): void {
-    elements.playControls.classList.toggle("turn-red", turnState.activeTeam === "red");
-    elements.playControls.classList.toggle("turn-blue", turnState.activeTeam === "blue");
+    elements.playControls.classList.toggle(
+      "turn-red",
+      turnState.activeTeam === "red",
+    );
+    elements.playControls.classList.toggle(
+      "turn-blue",
+      turnState.activeTeam === "blue",
+    );
 
     if (turnState.phase === "game_over" && turnState.winner) {
       elements.turnSummary.textContent = `${turnState.winner.toUpperCase()} wins.`;
@@ -178,9 +230,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
       selectedPiece.piece.team === turnState.activeTeam &&
       canPieceUseOwnRoll(selectedPiece.piece.kind);
 
-    elements.rollGeneralButton.disabled = mode !== "play" || turnState.phase !== "await_roll";
+    elements.rollGeneralButton.disabled =
+      mode !== "play" || turnState.phase !== "await_roll";
     elements.rollSelectedButton.disabled = !canRollSelected;
-    elements.endTurnButton.disabled = mode !== "play" || turnState.phase !== "resolve";
+    elements.endTurnButton.disabled =
+      mode !== "play" || turnState.phase !== "resolve";
   }
 
   function drawOverlay(): void {
@@ -216,7 +270,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     turnState.phase = "await_roll";
     turn = turnState.activeTeam;
     selectedPieceId = null;
-    elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
+    elements.positionInput.value = serializeState(
+      boardSize,
+      turn,
+      pieces.values(),
+    );
     drawOverlay();
     updateTurnUi();
     setStatus(`${turnState.activeTeam} to act.`);
@@ -235,13 +293,17 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     }
 
     const diceCount =
-      scope === "general" ? 1 : getDiceCountForPiece(piece?.piece.kind ?? "soldier");
+      scope === "general"
+        ? 1
+        : getDiceCountForPiece(piece?.piece.kind ?? "soldier");
     const dice = rollDice(diceCount);
     const total = dice.reduce((sum, value) => sum + value, 0);
 
     turnState.scope = scope;
-    turnState.rolledPieceId = scope === "piece" ? piece?.piece.id ?? null : null;
-    turnState.rolledPieceKind = scope === "piece" ? piece?.piece.kind ?? null : null;
+    turnState.rolledPieceId =
+      scope === "piece" ? (piece?.piece.id ?? null) : null;
+    turnState.rolledPieceKind =
+      scope === "piece" ? (piece?.piece.kind ?? null) : null;
     turnState.dice = dice;
     turnState.total = total;
     turnState.remaining = total;
@@ -263,7 +325,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     drawOverlay();
   }
 
-  function addPiece(team: Team, kind: PieceKind, position: Position): PiecePlacement {
+  function addPiece(
+    team: Team,
+    kind: PieceKind,
+    position: Position,
+  ): PiecePlacement {
     const placement: PiecePlacement = {
       piece: makePiece(team, kind),
       x: position.x,
@@ -285,7 +351,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     if (turnState.remaining < 0) {
       turnState.remaining = 0;
     }
-    elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
+    elements.positionInput.value = serializeState(
+      boardSize,
+      turn,
+      pieces.values(),
+    );
     updateTurnUi();
     drawOverlay();
   }
@@ -295,7 +365,10 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     renderer.upsertPiece(wall);
   }
 
-  function awardCapture(attackerTeam: ActiveTeam, defender: PiecePlacement): void {
+  function awardCapture(
+    attackerTeam: ActiveTeam,
+    defender: PiecePlacement,
+  ): void {
     scores[attackerTeam] += PIECE_SCORES[defender.piece.kind];
     updateScoreUi();
   }
@@ -319,7 +392,9 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
       return;
     }
     if (distance > turnState.remaining) {
-      setStatus(`That move needs ${distance} points but only ${turnState.remaining} remain.`);
+      setStatus(
+        `That move needs ${distance} points but only ${turnState.remaining} remain.`,
+      );
       return;
     }
 
@@ -386,8 +461,13 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     const distance = line.length;
 
     if (flexible) {
-      if (turnState.scope !== "piece" || turnState.rolledPieceId !== attacker.piece.id) {
-        setStatus(`${PIECE_LABELS[attacker.piece.kind]} attacks require that piece's own roll.`);
+      if (
+        turnState.scope !== "piece" ||
+        turnState.rolledPieceId !== attacker.piece.id
+      ) {
+        setStatus(
+          `${PIECE_LABELS[attacker.piece.kind]} attacks require that piece's own roll.`,
+        );
         return;
       }
       if (distance > turnState.remaining) {
@@ -397,7 +477,9 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
         return;
       }
     } else if (distance !== turnState.total) {
-      setStatus(`Attack distance must match the full roll total of ${turnState.total}.`);
+      setStatus(
+        `Attack distance must match the full roll total of ${turnState.total}.`,
+      );
       return;
     }
 
@@ -443,6 +525,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
       if (defender.piece.kind === "leader") {
         setGameOver(attackerTeam);
       } else {
+        const enemyTeam: ActiveTeam = attackerTeam === "red" ? "blue" : "red";
+        if (!hasRemainingUnits(enemyTeam)) {
+          setGameOver(attackerTeam);
+          return;
+        }
         setStatus(getCaptureMessage(attacker, defender, turnState.remaining));
       }
     };
@@ -467,7 +554,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     if (!selectedPalette) {
       if (existing) {
         removePiece(existing.piece.id);
-        elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
+        elements.positionInput.value = serializeState(
+          boardSize,
+          turn,
+          pieces.values(),
+        );
         drawOverlay();
         setStatus(`Removed piece at (${target.x + 1}, ${target.y + 1}).`);
       }
@@ -478,8 +569,16 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
       removePiece(existing.piece.id);
     }
 
-    const created = addPiece(selectedPalette.team, selectedPalette.kind, target);
-    elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
+    const created = addPiece(
+      selectedPalette.team,
+      selectedPalette.kind,
+      target,
+    );
+    elements.positionInput.value = serializeState(
+      boardSize,
+      turn,
+      pieces.values(),
+    );
     drawOverlay();
     setStatus(
       `Placed ${created.piece.team === "neutral" ? created.piece.kind : `${created.piece.team} ${created.piece.kind}`} at (${target.x + 1}, ${target.y + 1}).`,
@@ -503,7 +602,10 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
           setStatus(`It is ${turnState.activeTeam}'s turn.`);
           return;
         }
-        if (turnState.scope === "piece" && turnState.rolledPieceId !== piece.piece.id) {
+        if (
+          turnState.scope === "piece" &&
+          turnState.rolledPieceId !== piece.piece.id
+        ) {
           setStatus("This turn's roll belongs to a different piece.");
           return;
         }
@@ -535,7 +637,10 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
 
     if (piece) {
       if (piece.piece.team === turnState.activeTeam) {
-        if (turnState.scope === "piece" && turnState.rolledPieceId !== piece.piece.id) {
+        if (
+          turnState.scope === "piece" &&
+          turnState.rolledPieceId !== piece.piece.id
+        ) {
           setStatus("This turn's roll belongs to a different piece.");
           return;
         }
@@ -558,7 +663,10 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     element.setAttribute("aria-hidden", String(!isVisible));
 
     for (const control of element.querySelectorAll<
-      HTMLButtonElement | HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      | HTMLButtonElement
+      | HTMLInputElement
+      | HTMLSelectElement
+      | HTMLTextAreaElement
     >("button, input, select, textarea")) {
       control.disabled = !isVisible;
     }
@@ -602,11 +710,12 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
       button.dataset.kind = option.kind;
       button.innerHTML = `
         <span class="swatch swatch-${option.team}"></span>
-        <span>${formatter ? formatter(option) : `${option.team} ${PIECE_LABELS[option.kind]}`}</span>
+        <span>${formatter ? formatter(option) : `${PIECE_LABELS[option.kind]}`}</span>
       `;
       button.classList.toggle(
         "is-active",
-        selectedPalette?.team === option.team && selectedPalette.kind === option.kind,
+        selectedPalette?.team === option.team &&
+          selectedPalette.kind === option.kind,
       );
       button.addEventListener("click", () => {
         selectedPalette = option;
@@ -622,13 +731,22 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
   function renderPalette(): void {
     elements.paletteGrid.replaceChildren(
       renderPaletteColumn("palette-column-red", RED_PALETTE),
-      renderPaletteColumn("palette-column-neutral", [WALL_PALETTE], () => PIECE_LABELS.wall),
+      renderPaletteColumn(
+        "palette-column-neutral",
+        [WALL_PALETTE],
+        () => PIECE_LABELS.wall,
+      ),
       renderPaletteColumn("palette-column-blue", BLUE_PALETTE),
     );
-    elements.clearSelectionButton.classList.toggle("is-active", selectedPalette === null);
+    elements.clearSelectionButton.classList.toggle(
+      "is-active",
+      selectedPalette === null,
+    );
   }
 
-  function applySerializedState(nextState: ReturnType<typeof parseState>): void {
+  function applySerializedState(
+    nextState: ReturnType<typeof parseState>,
+  ): void {
     clearBoard();
     boardSize = nextState.size;
     turn = nextState.turn;
@@ -643,7 +761,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
 
     renderer.drawBoard();
     drawOverlay();
-    elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
+    elements.positionInput.value = serializeState(
+      boardSize,
+      turn,
+      pieces.values(),
+    );
     renderer.fitCameraToBoard();
     updateTurnUi();
   }
@@ -661,7 +783,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
 
     renderer.drawBoard();
     drawOverlay();
-    elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
+    elements.positionInput.value = serializeState(
+      boardSize,
+      turn,
+      pieces.values(),
+    );
     renderer.fitCameraToBoard();
     setStatus(`Board resized to ${safeSize}x${safeSize}.`);
   }
@@ -687,7 +813,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
 
   elements.clearBoardButton.addEventListener("click", () => {
     clearBoard();
-    elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
+    elements.positionInput.value = serializeState(
+      boardSize,
+      turn,
+      pieces.values(),
+    );
     setStatus("Board cleared.");
   });
 
@@ -695,7 +825,11 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
     mode = "play";
     preparePlaySession(true);
     refreshModeUi();
-    elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
+    elements.positionInput.value = serializeState(
+      boardSize,
+      turn,
+      pieces.values(),
+    );
     setStatus("Game started from current setup.");
   });
 
@@ -746,7 +880,9 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
       refreshModeUi();
       setStatus("Position loaded and play mode enabled.");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Failed to load position.");
+      setStatus(
+        error instanceof Error ? error.message : "Failed to load position.",
+      );
     }
   });
 
@@ -780,8 +916,14 @@ export async function createBattleboardApp(root: HTMLDivElement): Promise<void> 
   renderPalette();
   updateScoreUi();
   refreshModeUi();
-  elements.positionInput.value = serializeState(boardSize, turn, pieces.values());
-  setStatus("Setup mode active. Choose a palette piece and click the board to place it.");
+  elements.positionInput.value = serializeState(
+    boardSize,
+    turn,
+    pieces.values(),
+  );
+  setStatus(
+    "Setup mode active. Choose a palette piece and click the board to place it.",
+  );
 
   window.addEventListener("resize", () => {
     renderer.fitCameraToBoard();
